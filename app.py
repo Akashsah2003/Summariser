@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics.pairwise import cosine_similarity
@@ -11,9 +11,8 @@ import re, os
 import warnings
 import requests
 from bs4 import BeautifulSoup
-from transformers import pipeline
 # Load different summarization models
-from transformers import pipeline
+from transformers import pipeline, AutoTokenizer
 
 
 warnings.filterwarnings("ignore")
@@ -39,6 +38,7 @@ def clean_text(text):
 
 
 def preprocessing():
+    global df, tfidf_matrix
     df = pd.read_csv(os.path.join(os.path.dirname(__file__), 'data', 'data.csv'))
     df1 =df[['article_id','title','description','url']]
     df1['title'] = df1['title'].astype(str)
@@ -61,7 +61,6 @@ def preprocessing():
     df1['combined_text'] = df1['combined_text'].apply(lambda x: ' '.join(x))
     # TF-IDF Vectorization
     tfidf_matrix = tfidf_vectorizer.fit_transform(df1['combined_text'])
-    return df, tfidf_matrix
 
 
 def query(df, tfidf_matrix, user_query):
@@ -79,23 +78,33 @@ def query(df, tfidf_matrix, user_query):
 
 
 def summary(article_text):
+    # Initialize tokenizer
+    tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
+    # Tokenize the article text and select the first 1024 tokens
+    tokens = tokenizer(article_text, max_length=1024, truncation=True, padding="max_length", return_tensors="pt")
+    # Convert tokens to text
+    truncated_text = tokenizer.decode(tokens["input_ids"][0], skip_special_tokens=True)
     # Initialize summarization pipelines with different models
     summarizer_model1 = pipeline("summarization", model="facebook/bart-large-cnn")
     # Generate summaries using different models
-    summary_model1 = summarizer_model1(article_text, max_length=400, min_length=100, length_penalty=2.0, num_beams=4)
+    print(len(article_text))
+    summary_model1 = summarizer_model1(truncated_text, max_length=400, min_length=100, length_penalty=2.0, num_beams=4)
+    print(summary_model1[0])
     return summary_model1[0]['summary_text']
 
 
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template("index.html")
+    if request.method == 'POST':
+        user_query = request.form['user_query']
+        top_articles, article_text = query(df, tfidf_matrix, user_query)
+        # print(top_articles, article_text)
+        summary_text = summary(article_text)
+        return render_template("index.html", summary_text=summary_text, top_articles=top_articles)
+    return render_template("index.html", summary_text=None, top_articles=None)
 
 
 if (__name__=="__main__"):
-    df, tfidf_matrix = preprocessing()
-    top_articles, article_text = query(df, tfidf_matrix, "Narendra Modi")
-    summary_text = summary(article_text)
-    print(top_articles, summary_text)
-    
-    # app.run(debug=True)
+    preprocessing() 
+    app.run(debug=True)

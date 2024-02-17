@@ -1,13 +1,29 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Hello, world!</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="description" content="" />
-  <link rel="icon" href="favicon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Summarizer</title>
 </head>
 <body>
-  <h1>Hello, world!</h1>
+    <h1>News Summarizer</h1>
+    <form action="/" method="post">
+        <label for="user_query">Enter your query:</label>
+        <input type="text" id="user_query" name="user_query">
+        <button type="submit">Submit</button>
+    </form>
+    {% if summary_text %}
+    <h2>Summary:</h2>
+    <p>{{ summary_text }}</p>
+    {% endif %}
+    {% if top_articles is not none and not top_articles.empty %}
+    <h2>Top Articles:</h2>
+    <ul>
+        {% for index, article in top_articles.iterrows() %}
+        <li><a href="{{ article['url'] }}">{{ article['title'] }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
 </body>
 </html>
