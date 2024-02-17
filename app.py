@@ -77,7 +77,7 @@ def query(df, tfidf_matrix, user_query):
     return top_articles, article_text
 
 
-def summary(article_text):
+def summary(article_text, min_word_limit):
     # Initialize tokenizer
     tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
     # Tokenize the article text and select the first 1024 tokens
@@ -88,7 +88,7 @@ def summary(article_text):
     summarizer_model1 = pipeline("summarization", model="facebook/bart-large-cnn")
     # Generate summaries using different models
     print(len(article_text))
-    summary_model1 = summarizer_model1(truncated_text, max_length=400, min_length=100, length_penalty=2.0, num_beams=4)
+    summary_model1 = summarizer_model1(truncated_text, max_length=min_word_limit+50, min_length=min_word_limit, length_penalty=2.0, num_beams=4)
     print(summary_model1[0])
     return summary_model1[0]['summary_text']
 
@@ -98,9 +98,10 @@ def summary(article_text):
 def index():
     if request.method == 'POST':
         user_query = request.form['user_query']
+        min_word_limit = int(request.form['min_word_limit'])
         top_articles, article_text = query(df, tfidf_matrix, user_query)
         # print(top_articles, article_text)
-        summary_text = summary(article_text)
+        summary_text = summary(article_text, min_word_limit)
         return render_template("index.html", summary_text=summary_text, top_articles=top_articles)
     return render_template("index.html", summary_text=None, top_articles=None)
 

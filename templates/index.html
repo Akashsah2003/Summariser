@@ -15,8 +15,8 @@
     </head>
     
     <body id="top">
-
         <main>
+            <div class="position-fixed align-items-center justify-content-center w-100 h-100 top-0 left-0 bg-white opacity-75" style="z-index: 99; display: none;" id="loader"><img src="{{ url_for('static', filename='images/checklist.gif') }}" class="d-flex w-25 h-50" id="loader_image" alt=""></div>
 
             <nav class="navbar navbar-expand-lg">
                 <div class="container">
@@ -62,11 +62,16 @@
                             <h1 class="text-white text-center">Search. Study. Score</h1>
 
                             <h6 class="text-center">platform for researchers around the world</h6>
-                            <form action="/" method="post" class="custom-form mt-4 pt-2 mb-lg-0 mb-5" role="search">
+                            <form action="/" method="post" class="custom-form mt-4 pt-2 mb-lg-0 mb-5" role="search" id="query">
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text bi-search" id="basic-addon1">
                                     </span>
                                     <input name="user_query" type="search" class="form-control" id="keyword" placeholder="Topics, News, Articles, Events ..." aria-label="Search">
+                                    <select class="form-select" name="min_word_limit">
+                                        <option value="50">Length: 50</option>
+                                        <option value="100">Length: 100</option>
+                                        <option value="150">Length: 150</option>
+                                    </select>
                                     <button type="submit" class="form-control">Search</button>
                                 </div>
                             </form>
@@ -82,30 +87,42 @@
                           <div class="custom-block bg-white shadow-lg">
                               <div class="d-flex">
                                   <div>
-                                      <h5 class="mb-2">Summary</h5>
-                                      {% if summary_text %}
-                                          <p class="mb-0">{{ summary_text }}</p>
-                                      {% else %}
-                                          <p class="mb-0">When you will search for any topic, we will display a nice summary from articles related to it</p>
-                                      {% endif %}
+                                      <h5 class="mb-2">Top Articles</h5>
+                                      <p class="mb-0">
+                                        {% if top_articles is not none and not top_articles.empty %}
+                                        <br> 
+                                            {% for index, article in top_articles.iterrows() %}
+                                            <a href="{{ article['url'] }}"><u>{{ article['title'] }}</u></a>
+                                            <br><br>
+                                            {% endfor %}
+                                        {% else %}
+                                        Search for a query and we will display top articles on that topic for you to study!
+                                        {% endif %}
+                                    </p>
                                   </div>
                                   <span class="badge bg-design rounded-pill ms-auto">14</span>
-                              </div>                            
+                              </div>   
+                              {% if top_articles is none or top_articles.empty %}                         
                               <img src="{{ url_for('static', filename='images/topics/undraw_Remote_design_team_re_urdx.png') }}" class="custom-block-image img-fluid" alt="">
+                              {% endif %}
                           </div>
                         </div>
 
                         <div class="col-lg-6 col-12">
                             <div class="custom-block custom-block-overlay">
-                                <div class="d-flex flex-column h-100">
+                                <div class="d-flex flex-column min-h-100">
                                     
                                     <img src="{{ url_for('static', filename='images/businesswoman-using-tablet-analysis.jpg') }}" class="custom-block-image img-fluid" alt="">
 
                                     <div class="custom-block-overlay-text d-flex">
                                         <div>
-                                            <h5 class="text-white mb-2">Top Articles</h5>
-
-                                            <p class="text-white">Search for a query and we will display top articles on that topic for you to study!</p>
+                                            <h5 class="text-white mb-2">Summary</h5>
+                                            {% if summary_text %}
+                                                <div class="mb-0 text-white">{{ summary_text }}</div>
+                                            {% else %}
+                                                <p class="mb-0 text-white">When you will search for any topic, we will display a nice summary from articles related to it</p>
+                                            {% endif %}
+                                             
                                         </div>
 
                                         <span class="badge bg-finance rounded-pill ms-auto">25</span>
@@ -388,5 +405,15 @@
         <script src="{{ url_for('static', filename='js/jquery.sticky.js') }}"></script>
         <script src="{{ url_for('static', filename='js/click-scroll.js') }}"></script>
         <script src="{{ url_for('static', filename='js/custom.js') }}"></script>
+        <script>
+            document.getElementById("query").addEventListener("submit", function(event) {
+                // Show loader when form is submitted
+                document.getElementById("loader").style.display = "flex";
+            });
+            $(window).load(function() {
+                $('#loader_image').hide();
+                $('#loader').hide();
+              });
+        </script>
     </body>
 </html>
